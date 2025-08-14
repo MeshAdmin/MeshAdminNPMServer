@@ -1,0 +1,51 @@
+module.exports = {
+  apps: [
+    {
+      name: 'mesh-admin-frontend',
+      script: 'npm',
+      args: 'run dev',
+      cwd: '/Users/cnelson/Dev/MeshAdminNPMServer/packages/frontend',
+      env: {
+        NODE_ENV: 'development',
+        PORT: '5173',
+      },
+      env_production: {
+        NODE_ENV: 'production',
+        PORT: '3000',
+      },
+      instances: 1,
+      exec_mode: 'fork',
+      watch: false,
+      max_restarts: 10,
+      min_uptime: '2s',
+      out_file: '/var/log/pm2/frontend-out.log',
+      error_file: '/var/log/pm2/frontend-error.log',
+      log_file: '/var/log/pm2/frontend-combined.log',
+      log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
+    },
+    {
+      name: 'mesh-admin-backend',
+      script: 'npm',
+      args: 'run dev',
+      cwd: '/Users/cnelson/Dev/MeshAdminNPMServer/packages/backend',
+      env: {
+        NODE_ENV: 'development',
+        PORT: '3001',
+      },
+      env_production: {
+        NODE_ENV: 'production',
+        PORT: '3001',
+      },
+      instances: 1,
+      exec_mode: 'fork',
+      watch: false,
+      max_restarts: 15,
+      min_uptime: '3s',
+      max_memory_restart: '1G',
+      out_file: '/var/log/pm2/backend-out.log',
+      error_file: '/var/log/pm2/backend-error.log',
+      log_file: '/var/log/pm2/backend-combined.log',
+      log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
+    },
+  ],
+};

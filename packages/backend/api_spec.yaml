@@ -1,0 +1,253 @@
+openapi: 3.0.0
+info:
+  title: API Specification
+  version: 1.0.0
+paths:
+  /auth:
+    post:
+      summary: Authenticate user
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+              required:
+                - username
+                - password
+      responses:
+        '200':
+          description: Successful authentication
+  /users:
+    get:
+      summary: Get user list
+      responses:
+        '200':
+          description: A list of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    name:
+                      type: string
+  /services:
+    get:
+      summary: List all services
+      responses:
+        '200':
+          description: A list of services
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    name:
+                      type: string
+    post:
+      summary: Create a new service
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+              required:
+                - name
+      responses:
+        '201':
+          description: Service created successfully
+  /services/{serviceId}:
+    get:
+      summary: Get a service by ID
+      parameters:
+        - name: serviceId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Service details
+    put:
+      summary: Update a service
+      parameters:
+        - name: serviceId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+              required:
+                - name
+      responses:
+        '200':
+          description: Service updated successfully
+    delete:
+      summary: Delete a service
+      parameters:
+        - name: serviceId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Service deleted successfully
+  /packages:
+    get:
+      summary: List all packages
+      responses:
+        '200':
+          description: A list of packages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    name:
+                      type: string
+    post:
+      summary: Install a new package
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+              required:
+                - name
+      responses:
+        '201':
+          description: Package installed successfully
+  /packages/{packageId}:
+    delete:
+      summary: Remove a package
+      parameters:
+        - name: packageId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Package removed successfully
+  /monitor:
+    get:
+      summary: Get monitoring data
+      responses:
+        '200':
+          description: Monitoring data retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  metrics:
+                    type: array
+                    items:
+                      type: string
+                  logs:
+                    type: array
+                    items:
+                      type: string
+                  events:
+                    type: array
+                    items:
+                      type: string
+  /domains:
+    get:
+      summary: List all domains
+      responses:
+        '200':
+          description: A list of domains
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    name:
+                      type: string
+  /ssl:
+    get:
+      summary: List SSL configurations
+      responses:
+        '200':
+          description: A list of SSL configurations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    certificate:
+                      type: string
+  /plugins:
+    get:
+      summary: List all plugins
+      responses:
+        '200':
+          description: A list of plugins
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    name:
+                      type: string
+
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+
+x-websocket:
+  metrics:
+    description: Metrics namespace for WebSocket
+  logs:
+    description: Logs namespace for WebSocket
+  events:
+    description: Events namespace for WebSocket

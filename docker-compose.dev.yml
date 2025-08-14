@@ -1,0 +1,114 @@
+version: '3.8'
+
+services:
+  database:
+    image: postgres:15
+    container_name: meshadmin-db-dev
+    environment:
+      POSTGRES_DB: meshadmin_dev
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data_dev:/var/lib/postgresql/data
+      - ./packages/backend/prisma/migrations:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - meshadmin-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: meshadmin-redis-dev
+    ports:
+      - '6379:6379'
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data_dev:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - meshadmin-network
+
+  backend:
+    build:
+      context: .
+      dockerfile: packages/backend/Dockerfile
+      target: dev
+    container_name: meshadmin-backend-dev
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://postgres:postgres@database:5432/meshadmin_dev
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: dev-jwt-secret-key
+      PORT: 8080
+    ports:
+      - '8080:8080'
+    volumes:
+      - ./packages/backend:/app/packages/backend
+      - /app/packages/backend/node_modules
+    depends_on:
+      database:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: >
+      sh -c "
+        npx prisma migrate deploy &&
+        npx prisma db seed &&
+        npm run dev
+      "
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:8080/health']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - meshadmin-network
+
+  frontend:
+    build:
+      context: .
+      dockerfile: packages/frontend/Dockerfile
+      target: dev
+    container_name: meshadmin-frontend-dev
+    environment:
+      NODE_ENV: development
+      VITE_API_BASE_URL: http://localhost:8080
+    ports:
+      - '3000:3000'
+    volumes:
+      - ./packages/frontend:/app/packages/frontend
+      - /app/packages/frontend/node_modules
+    depends_on:
+      - backend
+    networks:
+      - meshadmin-network
+
+  nginx:
+    image: nginx:alpine
+    container_name: meshadmin-nginx-dev
+    ports:
+      - '80:80'
+    volumes:
+      - ./nginx/dev.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - meshadmin-network
+
+volumes:
+  postgres_data_dev:
+  redis_data_dev:
+
+networks:
+  meshadmin-network:
+    driver: bridge

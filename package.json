@@ -1,0 +1,129 @@
+{
+  "name": "meshadmin-monorepo",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "pnpm --parallel --recursive dev",
+    "build": "pnpm --recursive build",
+    "lint": "pnpm --recursive lint",
+    "lint:fix": "pnpm --recursive lint:fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "pnpm --recursive test",
+    "prepare": "husky install",
+    "frontend:dev": "pnpm --filter @meshadmin/frontend dev",
+    "backend:dev": "pnpm --filter @meshadmin/backend dev",
+    "shared:build": "pnpm --filter @meshadmin/shared build",
+    "electron:dev": "electron electron/main.cjs",
+    "dev:electron": "concurrently -k -n FRONTEND,BACKEND,ELECTRON -c cyan,green,magenta \"pnpm frontend:dev\" \"pnpm backend:dev\" \"wait-on http://localhost:5555 && cross-env NODE_ENV=development electron electron/main.cjs\"",
+    "electron:build": "pnpm build && electron-builder",
+    "electron:build:mac": "pnpm build && electron-builder --mac",
+    "electron:build:win": "pnpm build && electron-builder --win",
+    "electron:build:linux": "pnpm build && electron-builder --linux",
+    "dist": "pnpm electron:build:mac"
+  },
+  "devDependencies": {
+    "@electron/notarize": "^3.0.1",
+    "@typescript-eslint/eslint-plugin": "^6.21.0",
+    "@typescript-eslint/parser": "^6.21.0",
+    "concurrently": "^9.2.0",
+    "cross-env": "^10.0.0",
+    "dotenv-flow": "^4.0.1",
+    "electron": "^33.2.1",
+    "electron-builder": "^26.0.12",
+    "eslint": "^8.56.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-react": "^7.33.2",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "eslint-plugin-react-refresh": "^0.4.5",
+    "husky": "^8.0.3",
+    "icon-gen": "^5.0.0",
+    "lint-staged": "^15.2.0",
+    "prettier": "^3.2.4",
+    "typescript": "^5.3.3",
+    "wait-on": "^8.0.4"
+  },
+  "workspaces": [
+    "packages/frontend",
+    "packages/backend",
+    "packages/shared"
+  ],
+  "main": "electron/main.cjs",
+  "homepage": "./",
+  "build": {
+    "appId": "com.meshadmin.npmserver",
+    "productName": "MeshAdmin NPM Server",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "electron/**/*",
+      "packages/frontend/dist/**/*",
+      "packages/backend/dist/**/*",
+      "node_modules/**/*",
+      "resources/**/*"
+    ],
+    "mac": {
+      "category": "public.app-category.developer-tools",
+      "icon": "resources/app.icns",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        }
+      ],
+      "darkModeSupport": true,
+      "minimumSystemVersion": "10.14.0"
+    },
+    "win": {
+      "icon": "resources/app.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "linux": {
+      "icon": "resources/app.png",
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "deb",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "category": "Development"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  }
+}

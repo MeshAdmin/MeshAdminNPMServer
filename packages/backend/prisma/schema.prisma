@@ -1,0 +1,241 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  username  String   @unique
+  email     String   @unique
+  password  String
+  role      String   @default("viewer")
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Service {
+  id          String            @id @default(cuid())
+  name        String            @unique
+  description String?
+  type        String            @default("pm2")
+  config      Json?
+  status      ServiceStatus     @default(STOPPED)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @default(now()) @updatedAt
+  logs        ServiceLog[]
+  pm2Config   ServicePm2Config?
+}
+
+model ServiceLog {
+  id        String   @id @default(cuid())
+  serviceId String
+  message   String
+  level     LogLevel @default(INFO)
+  source    String?
+  timestamp DateTime @default(now())
+  service   Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@index([serviceId, timestamp])
+  @@index([timestamp])
+}
+
+model ServicePm2Config {
+  id               String   @id @default(cuid())
+  serviceId        String   @unique
+  script           String
+  name             String
+  cwd              String?
+  args             String?
+  interpreter      String?
+  interpreterArgs  String?
+  instances        Int      @default(1)
+  execMode         String   @default("fork")
+  env              Json?
+  envProduction    Json?
+  envDevelopment   Json?
+  logFile          String?
+  outFile          String?
+  errorFile        String?
+  logDateFormat    String?
+  pidFile          String?
+  minUptimeSeconds Int?     @default(1000)
+  maxRestarts      Int?     @default(15)
+  restartDelay     Int?     @default(0)
+  watch            Boolean  @default(false)
+  watchOptions     Json?
+  ignoreWatch      String?
+  maxMemoryRestart String?
+  killTimeout      Int?     @default(1600)
+  waitReady        Boolean  @default(false)
+  listenTimeout    Int?     @default(3000)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  service          Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+}
+
+model PackageAction {
+  id   String @id @default(cuid())
+  name String
+}
+
+model LogEntry {
+  id        String   @id @default(cuid())
+  message   String
+  createdAt DateTime @default(now())
+}
+
+model MetricSample {
+  id      String   @id @default(cuid())
+  value   Float
+  takenAt DateTime @default(now())
+}
+
+model Domain {
+  id               String               @id @default(cuid())
+  name             String               @unique
+  wildcard         Boolean              @default(false)
+  validationMethod String               @default("http-01")
+  challengePlugin  String?
+  pluginConfig     Json?
+  isActive         Boolean              @default(true)
+  lastVerified     DateTime?
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @default(now()) @updatedAt
+  certificates     Certificate[]
+  renewalJobs      CertificateRenewal[]
+}
+
+model Certificate {
+  id             String                  @id @default(cuid())
+  domainId       String
+  subject        String
+  altNames       String
+  issuer         String
+  serial         String
+  certPem        String
+  chainPem       String
+  keyPem         String
+  fullchainPem   String
+  issuedAt       DateTime
+  expiresAt      DateTime
+  status         CertificateStatus       @default(ACTIVE)
+  acmeAccountKey String?
+  acmeOrderUrl   String?
+  challengeType  String
+  createdAt      DateTime                @default(now())
+  updatedAt      DateTime                @updatedAt
+  domain         Domain                  @relation(fields: [domainId], references: [id], onDelete: Cascade)
+  deployments    CertificateDeployment[]
+  renewalJobs    CertificateRenewal[]
+}
+
+model CertificateRenewal {
+  id               String        @id @default(cuid())
+  certificateId    String
+  domainId         String
+  scheduledAt      DateTime
+  attemptedAt      DateTime?
+  completedAt      DateTime?
+  nextAttempt      DateTime?
+  status           RenewalStatus @default(SCHEDULED)
+  attempts         Int           @default(0)
+  maxAttempts      Int           @default(3)
+  lastError        String?
+  autoRenewal      Boolean       @default(true)
+  renewalThreshold Int           @default(30)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  domain           Domain        @relation(fields: [domainId], references: [id], onDelete: Cascade)
+  certificate      Certificate   @relation(fields: [certificateId], references: [id], onDelete: Cascade)
+}
+
+model CertificateDeployment {
+  id                  String           @id @default(cuid())
+  certificateId       String
+  targetType          String
+  targetConfig        Json
+  deploymentPath      String?
+  status              DeploymentStatus @default(PENDING)
+  deployedAt          DateTime?
+  lastError           String?
+  pm2RestartRequired  Boolean          @default(false)
+  pm2RestartCompleted Boolean          @default(false)
+  pm2Services         String
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+  certificate         Certificate      @relation(fields: [certificateId], references: [id], onDelete: Cascade)
+}
+
+model AcmeAccount {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  accountKey    String
+  accountUrl    String
+  directoryUrl  String   @default("https://acme-v02.api.letsencrypt.org/directory")
+  serverName    String   @default("Let's Encrypt")
+  status        String   @default("valid")
+  termsAccepted Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Plugin {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  version     String   @default("1.0.0")
+  description String?
+  enabled     Boolean  @default(true)
+  config      Json?
+  hooks       Json?
+  filePath    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
+}
+
+enum LogLevel {
+  DEBUG
+  INFO
+  WARN
+  ERROR
+  FATAL
+}
+
+enum ServiceStatus {
+  RUNNING
+  STOPPED
+  ERROR
+  RESTARTING
+  STOPPING
+  STARTING
+  UNKNOWN
+}
+
+enum CertificateStatus {
+  ACTIVE
+  EXPIRED
+  REVOKED
+  PENDING
+  FAILED
+}
+
+enum RenewalStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum DeploymentStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+  CANCELLED
+}

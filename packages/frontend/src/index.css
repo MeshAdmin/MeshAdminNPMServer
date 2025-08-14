@@ -1,0 +1,22 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Electron window dragging support */
+body {
+  -webkit-app-region: drag;
+}
+
+/* Make interactive elements non-draggable */
+button,
+input,
+select,
+textarea,
+a,
+.no-drag,
+[role='button'],
+[type='button'],
+[type='submit'],
+[type='reset'] {
+  -webkit-app-region: no-drag;
+}
